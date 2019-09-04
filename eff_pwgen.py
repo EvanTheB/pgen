@@ -1,24 +1,39 @@
 import random
-
+import math
+import argparse
 
 r = random.SystemRandom()
 
-with open("eff_small_wordlist_2.txt") as password_file:
-    short_list = password_file.read().split()[1::2]
-assert len(short_list) == 6**4, len(short_list)
+def get_password(this_list, num=6, max_len=None):
+    # try, but not forever
+    for i in range(1000):
+        my_password = [r.choice(this_list) for _ in range(num)]
+        if max_len is None or len(' '.join(my_password)) < max_len:
+            return my_password
+    else:
+        raise Exception("Could not find a password")
 
-with open("eff_large_wordlist.txt") as password_file:
-    long_list = password_file.read().split()[1::2]
-assert len(long_list) == 6**5, len(long_list)
+def bits(this_list, num=6, max_len=None):
+    if max_len is None:
+        print 'words:', math.log(len(this_list) ** num) / math.log(2)
+        print 'chars:', math.log(24 ** (num * len(min(this_list, key=lambda s: len(s))))) / math.log(2)
+        print '3chars:', math.log(24 ** (3 * num)) / math.log(2)
+
+def main():
+    parser = argparse.ArgumentParser(description='Get a password')
+    parser.add_argument('number', type=int, default=6, nargs='?',
+                        help='number of words in password')
+    parser.add_argument('wordlist', type=argparse.FileType('r'), nargs='?',
+                        default="eff_large_wordlist.txt",
+                        help='a wordlist')
+    args = parser.parse_args()
+
+    this_list=args.wordlist.read().split()[1::2]
+    p = get_password(this_list, num=args.number)
+    print ' '.join(p)
+    print ''.join(s[:3] for s in p)
+    bits(this_list, num=args.number)
 
 
-# print short_list
-# print long_list
-
-# print len(set(x[0:3] for x in long_list))
-# print len(set(x[0:3] for x in short_list))
-
-# my_password = [r.choice(long_list) for _ in range(6)]
-my_password = [r.choice(short_list) for _ in range(8)]
-print " ".join(my_password)
-print "".join(x[0:3] for x in my_password)
+if __name__ == '__main__':
+    main()
