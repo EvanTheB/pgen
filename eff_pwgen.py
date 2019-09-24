@@ -11,7 +11,13 @@ def flatten(listOfLists):
     return chain.from_iterable(listOfLists)
 
 
-def get_alt_password(this_list, num=6, max_len=None):
+def interleave(l, r):
+    for ll, rr in zip(l, r):
+        yield ll
+        yield rr
+
+
+def get_lr(this_list):
     left_hand = set("qwertasdfgzxcvb")
 
     left_right = [[], []]
@@ -34,14 +40,7 @@ def get_alt_password(this_list, num=6, max_len=None):
     print("right", len(left_right[1]))
     print("left_only", len(left_only[1]))
 
-    return list(
-        flatten(
-            [
-                (r.choice(left_right[0]), r.choice(left_right[1]))
-                for _ in range(num // 2)
-            ]
-        )
-    )
+    return left_right
 
 
 def get_password(this_list, num=6, max_len=None):
@@ -55,13 +54,19 @@ def get_password(this_list, num=6, max_len=None):
 
 
 def bits(this_list, num=6, max_len=None):
-    if max_len is None:
+    if len(this_list) == len(set(this_list)):
         print("words:", math.log(len(this_list) ** num) / math.log(2))
-        print(
-            "chars:",
-            math.log(24 ** (num * len(min(this_list, key=lambda s: len(s)))))
-            / math.log(2),
-        )
+
+    # assuming a uniform distribution, not valid at all
+    print(
+        "chars:",
+        math.log(24 ** (num * len(min(this_list, key=lambda s: len(s)))))
+        / math.log(2),
+    )
+
+    # just typing the 3 unique char prefix
+    # again assuming uniform
+    if len(this_list) == len(set(w[:3] for w in this_list)):
         print("3chars:", math.log(24 ** (3 * num)) / math.log(2))
 
 
@@ -85,10 +90,16 @@ def main():
 
     this_list = args.wordlist.read().strip().split()[1::2]
 
-    p = get_alt_password(this_list, num=args.number)
+    l, r = get_lr(this_list)
+    p = list(interleave(
+        get_password(l, args.number // 2), get_password(r, args.number // 2)
+    ))
+
     print(" ".join(p))
     print("".join(s[:3] for s in p))
-    bits(this_list, num=args.number)
+
+    bits(l, num=args.number // 2)
+    bits(r, num=args.number // 2)
 
 
 if __name__ == "__main__":
