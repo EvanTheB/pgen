@@ -1,8 +1,47 @@
 import random
 import math
 import argparse
+from itertools import chain
 
 r = random.SystemRandom()
+
+
+def flatten(listOfLists):
+    "Flatten one level of nesting"
+    return chain.from_iterable(listOfLists)
+
+
+def get_alt_password(this_list, num=6, max_len=None):
+    left_hand = set("qwertasdfgzxcvb")
+
+    left_right = [[], []]
+    left_only = []
+
+    for w in this_list:
+        if w[0] in left_hand and w[1] not in left_hand and w[2] in left_hand:
+            left_right[0].append(w)
+        elif (
+            w[0] not in left_hand
+            and w[1] in left_hand
+            and w[2] not in left_hand
+        ):
+            left_right[1].append(w)
+
+        if all(c in left_hand for c in w[:3]):
+            left_only.append(w)
+
+    print("left", len(left_right[0]))
+    print("right", len(left_right[1]))
+    print("left_only", len(left_only[1]))
+
+    return list(
+        flatten(
+            [
+                (r.choice(left_right[0]), r.choice(left_right[1]))
+                for _ in range(num // 2)
+            ]
+        )
+    )
 
 
 def get_password(this_list, num=6, max_len=None):
@@ -45,7 +84,8 @@ def main():
     args = parser.parse_args()
 
     this_list = args.wordlist.read().strip().split()[1::2]
-    p = get_password(this_list, num=args.number)
+
+    p = get_alt_password(this_list, num=args.number)
     print(" ".join(p))
     print("".join(s[:3] for s in p))
     bits(this_list, num=args.number)
