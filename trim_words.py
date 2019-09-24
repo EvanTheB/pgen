@@ -3,23 +3,9 @@
 import sys
 from collections import defaultdict
 
-
-class Getch:
-    # https://stackoverflow.com/a/510364/3936601
-    def __init__(self):
-        import tty, sys
-
-    def __call__(self):
-        import sys, tty, termios
-
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+from picotui.widgets import *
+from picotui.menu import *
+from picotui.context import Context
 
 
 def main():
@@ -28,30 +14,42 @@ def main():
     for w in words:
         word_3[w[:3]].append(w)
 
-    trim_y = set([l.strip() for l in open("trim_y.txt").read().strip().split("\n")])
-    trim_n = set([l.strip() for l in open("trim_n.txt").read().strip().split("\n")])
+    trim_y = set(
+        [l.strip() for l in open("trim_y.txt").read().strip().split("\n")]
+    )
+    trim_n = set(
+        [l.strip() for l in open("trim_n.txt").read().strip().split("\n")]
+    )
 
-    exits = set('\x03\x1c\x04')
-    getc = Getch()
-    for w in words:
-        if w in trim_y or w in trim_n:
-            continue
+    try:
+        for c3, c3words in word_3.items():
+            if any(w in trim_y or w in trim_n for w in c3words):
+                continue
 
-        print(w)
-        c = getc()
+            with Context():
+                d = Dialog(1, 1)
+                l = ["None"] + c3words
+                lb = WListBox(max(len(x) for x in l), min(10, len(l)), l)
+                d.autosize()
+                # lb.autosize()
+                lb.finish_dialog = ACTION_OK
+                d.add(1, 1, lb)
+                res = d.loop()
+            if res != ACTION_OK:
+                break
 
-        if c in exits:
-            break
-
-        if c == "y":
-            trim_y.add(w)
-        else:
-            trim_n.add(w)
-
-    with open("trim_y.txt", 'w') as t:
-        t.write("\n".join(sorted(trim_y)) + "\n")
-    with open("trim_n.txt", 'w') as t:
-        t.write("\n".join(sorted(trim_n)) + "\n")
+            # print(lb.choice)
+            # print(c3words)
+            if lb.choice == 0:
+                trim_n |= set(c3words)
+            else:
+                trim_y.add(c3words[lb.choice - 1])
+                trim_n |= set(c3words) - set(c3words[lb.choice - 1])
+    finally:
+        with open("trim_y.txt", "w") as t:
+            t.write("\n".join(sorted(trim_y)) + "\n")
+        with open("trim_n.txt", "w") as t:
+            t.write("\n".join(sorted(trim_n)) + "\n")
 
 
 if __name__ == "__main__":
