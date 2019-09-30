@@ -2,6 +2,7 @@
 
 import sys
 from collections import defaultdict
+from random import sample
 
 from picotui.widgets import *
 from picotui.menu import *
@@ -22,14 +23,14 @@ def main():
     )
 
     try:
-        for c3, c3words in word_3.items():
+        for c3, c3words in sample(word_3.items(), k=len(word_3)):
             if any(w in trim_y or w in trim_n for w in c3words):
                 continue
 
             with Context():
                 d = Dialog(1, 1)
-                l = ["None"] + c3words
-                lb = WListBox(max(len(x) for x in l), min(10, len(l)), l)
+                l = ["None"] + sample(c3words, k=len(c3words))
+                lb = WListBox(max(len(x) for x in l), min(30, len(l)), l)
                 d.autosize()
                 # lb.autosize()
                 lb.finish_dialog = ACTION_OK
